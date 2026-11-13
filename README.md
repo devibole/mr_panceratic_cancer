@@ -7,11 +7,7 @@ MR and colocalization code for UKB-PPP and deCODE proteins using a meta-analyzed
 - [`analysis/run_decode_mr.R`](analysis/run_decode_mr.R): the same analysis from raw deCODE `.txt.gz`, using its native column names and allele annotations.
 - [`analysis/run_colocalization.R`](analysis/run_colocalization.R): regional colocalization for either cohort, from full regional summary statistics.
 
-The MR scripts do not use previously selected MR instrument tables. Each processes one source assay and runs IVW, weighted median, MR-Egger, PIVW and MR-RAPS.
-
 ## Inputs and running
-
-Set paths in the configuration section of each MR script, or use its listed environment variables. Required references are the cleaned GWAS, assay manifest (saved seeds), cohort-specific gene annotations, verified source-variant maps and the allele-aware EUR PLINK reference/lookup files. 
 
 ```bash
 Rscript analysis/run_ukb_mr.R /path/to/protein.tar ukb_output
