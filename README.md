@@ -1,44 +1,30 @@
 # Plasma Proteome and Pancreatic Ductal Adenocarcinoma Risk: A Mendelian Randomization and Observational Analysis​
+MR and colocalization code for UKB-PPP and deCODE proteins using a meta-analyzed PanScan1234 + FinnGen R13 pancreatic cancer GWAS for the outcome.
 
-Mendelian randomization (MR) and colocalization code for UKB-PPP and deCODE proteins, using PanScan1234 + FinnGen R13 pancreatic cancer GWAS.
+## Scripts
 
-## Analysis files
+- [`analysis/run_ukb_mr.R`](analysis/run_ukb_mr.R): raw UKB `.tar` → numeric cis filtering → quality control → allele-aware GWAS matching → LD clumping → MR.
+- [`analysis/run_decode_mr.R`](analysis/run_decode_mr.R): the same analysis from raw deCODE `.txt.gz`, using its native column names and allele annotations.
+- [`analysis/run_colocalization.R`](analysis/run_colocalization.R): regional colocalization for either cohort, from full regional summary statistics.
 
-- [`analysis/run_mr.R`](analysis/run_mr.R): IVW, weighted median, MR-Egger, PIVW and MR-RAPS.
-- [`analysis/run_colocalization.R`](analysis/run_colocalization.R): regional Bayesian colocalization.
+The MR scripts do not use previously selected MR instrument tables. Each processes one source assay and runs IVW, weighted median, MR-Egger, PIVW and MR-RAPS.
 
-Both scripts are self-contained and support UKB and deCODE.
+## Inputs and running
 
-## Inputs and scope
-
-These scripts use the final prepared inputs; raw-data cleaning, coordinate conversion, harmonization and LD clumping are separate upstream steps.
-
-Place these four files in one input directory:
-
-- `MR_instruments.tsv.gz`: harmonized, LD-clumped IV-level exposure/outcome statistics.
-- `Assay_manifest.tsv`: assay identifiers, target labels and bootstrap seeds.
-- `Coloc_inputs.tsv.gz`: full quality-filtered regional statistics, not just IVs.
-- `Coloc_regions.tsv`: lead variants, region boundaries and SNP counts.
-
-Required columns are checked in each script. `cohort` is `ukb` or `decode`; `protein` identifies an assay. Variants use normalized GRCh37 `chr:position:REF:ALT` keys, with exposure/outcome effects already aligned. Outcome beta is log(OR) for ALT.
-
-Data and reference panels are not included. 
-
-## Run
-
-Requires R and `data.table`, `R.utils`, `MendelianRandomization`, `mr.pivw`, `mr.raps` and `coloc`.
+Set paths in the configuration section of each MR script, or use its listed environment variables. Required references are the cleaned GWAS, assay manifest (saved seeds), cohort-specific gene annotations, verified source-variant maps and the allele-aware EUR PLINK reference/lookup files. 
 
 ```bash
-Rscript analysis/run_mr.R /path/to/prepared_inputs mr_results all
-Rscript analysis/run_colocalization.R /path/to/prepared_inputs coloc_results all
+Rscript analysis/run_ukb_mr.R /path/to/protein.tar ukb_output
+Rscript analysis/run_decode_mr.R /path/to/protein.txt.gz decode_output
+Rscript analysis/run_colocalization.R /path/to/regional_inputs coloc_output all
 ```
 
-Replace `all` with `ukb` or `decode` to run one cohort. Output directories must be new or empty. 
+Colocalization requires `Coloc_inputs.tsv.gz` and `Coloc_regions.tsv`; these contain full regional variants, not just MR IVs. Replace `all` with `ukb` or `decode` for one cohort. 
 
-## Analysis settings
+## Settings
 
-MR preserves per-assay seeds; PIVW uses 10,000 bootstraps. Unavailable estimates remain `NA`. Bonferroni and BH-FDR corrections use all positive-IV assays within each cohort and method: 1,985 UKB and 1,789 deCODE in the complete primary inputs. Complete cohort inputs are required to reproduce study-adjusted P-values.
+Cis windows are gene body ±1 Mb, assessed in UKB GRCh38 or deCODE GRCh37 coordinates. Analysis variants use normalized GRCh37 `chr:position:REF:ALT`. Exposure P ≤ 5×10⁻⁸ and the original quality filters are retained; LD clumping uses p1 = 0.5, r² = 0.1 and 2,000 kb. Single-assay runs report unadjusted P-values; cohort-wide Bonferroni/FDR correction requires the complete positive-IV assay family.
 
-Colocalization uses ±150 kb IV-lead regions for IVW-FDR-selected assays, quantitative exposures (`sdY = 1`), a binary outcome, and priors p1 = p2 = 10⁻⁴ and p12 = 10⁻⁵. PPH4 ≥ 0.8 indicates support. The beta/variance model does not require outcome sample-size assumptions.
+Colocalization uses IV-lead ±150 kb regions for IVW-FDR-selected assays, `coloc.abf`, exposure `sdY = 1`, a binary outcome and priors p1 = p2 = 10⁻⁴, p12 = 10⁻⁵.
 
-Study versions: R 4.4.3; data.table 1.17.0; MendelianRandomization 0.10.0; mr.pivw 0.1.3; mr.raps 0.4.2; coloc 5.2.3.
+Requires R, PLINK 1.9, gzip, awk, and the R packages named in each script. Study versions: R 4.4.3, data.table 1.17.0, MendelianRandomization 0.10.0, mr.pivw 0.1.3, mr.raps 0.4.2 and coloc 5.2.3. 
